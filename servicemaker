@@ -1,0 +1,104 @@
+#!/bin/bash
+
+if [[ $# -eq 0 ]] ; then
+cat << EOM
+Usage: 
+EOM
+exit 0
+fi
+
+NAME="Default"
+APP="None"
+DESCRIPTION="Default Description"
+DIRECTORY="/home/"
+RESTART=10
+SERVICES="/usr/lib/systemd/system"
+
+for i in "$@"
+do
+case $i in
+    -n=*|--name=*)
+    NAME="${i#*=}"
+    shift # past argument=value
+    ;;
+    -a=*|--application=*)
+    APP="${i#*=}"
+    shift # past argument=value
+    ;;
+    -d=*|--description=*)
+    DESCRIPTION="${i#*=}"
+    shift # past argument=value
+    ;;
+    -w=*|--directory=*)
+    DIRECTORY="${i#*=}"
+    shift # past argument=value
+    ;;
+    -r=*|--restart=*)
+    RESTART="${i#*=}"
+    shift # past argument=value
+    ;;
+    --default)
+    DEFAULT=YES
+    shift # past argument with no value
+    ;;
+    *)
+          # unknown option
+    ;;
+esac
+done
+
+echo ""
+echo "Name              = ${NAME}"
+echo "Application       = ${APP}"
+echo "Description       = ${DESCRIPTION}"
+echo "Working Directory = ${DIRECTORY}"
+echo "Restart Seconds   = ${RESTART}"
+echo ""
+
+SERVICE=$SERVICES/$NAME.service
+
+FILE=$SERVICE
+if test -f "$FILE"; then
+    echo "$NAME.service exists disabling and removing"
+    systemctl disable $NAME.service
+    rm -f $SERVICE
+fi
+
+cat > $SERVICE << EOM
+[Unit]
+Description=$DESCRIPTION
+[Service]
+Type=simple
+PIDFile=/run/$NAME.pid
+# Step 1 and Step 2 details are here..
+# ------------------------------------
+ExecStart=$APP
+User=gelmes
+Group=gelmes
+WorkingDirectory=$DIRECTORY
+Restart=always
+RestartSec=10
+#KillMode=mixed
+[Install]
+WantedBy=multi-user.target
+EOM
+
+systemctl enable $NAME.service
+systemctl start $NAME.service
+
+echo ""
+
+cat << EOM
+Check the status of your application with the fallowing commands:
+
+systemctl status $NAME.service  # Shows the status of your service
+systemctl enable $NAME.service  # Enables your service
+systemctl disable $NAME.serivce # Disables your service
+systemctl start $NAME.service   # Starts your service
+systemctl stop $NAME.service    # Stops your service
+
+journalctl -u $NAME.service     # Shows logs
+journalctl -u $NAME.service -f  # Automatically fallows logs
+EOM
+
+echo ""
