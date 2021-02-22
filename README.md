@@ -6,17 +6,38 @@ While all these methods might have their place almost always I just want my appl
 With `systemd` you can turn your application into a service and even look at logs.
 
 ## Install
+
+To check if you have `systemd` installed run:
+
+```
+systemctl
+```
+
+This will ether give you an error if the command does not exist or list out the status of the system services.
+
+If you have `systemd` you can install then install this application
+
+```
 sudo sh install.sh
+```
 
 ## How to use
 ```
-sudo servicemaker [-n name] [-a "app-executable-location"] [-d "description"] [-w working-directory] [-r reset-time] [-u user]
+Usage: servicemaker [OPTION]...
+Automatically create and start a systemd unit file from a template.
+
+    -m, --name          Service name
+    -a, --application   Application location
+    -d, --description   Description of application
+    -w, --directory     Working Directory of application (no spaces!)
+    -r, --restart       Restart interval in seconds (default: 10)
+    -u, --user          User execution level (default: root!)
 ```
 
-## Issues
-
-If you have any issues make sure you have no spaces in the arguments you pass and that the executable you are trying to run has execute permission enabled with `chmod +x you-app`
-
+Example:
+```
+sudo servicemaker -n destroyer -a "/home/destroyer.sh" -d "Builds empty worlds" -w "/home/root" -r 1 -u "$USER"
+```
 ## Good to know commands
 
 Some commands you will want to get familiar with once you run the `SystemdServiceMaker`
@@ -31,3 +52,15 @@ systemctl stop yourservice.service    # Stops your service
 journalctl -u yourservice    # Shows logs
 journalctl -u yourservice -f # Automatically fallows logs
 ```
+
+## Issues
+
+### Spaces
+There is a bug in `systemd` unit files where the working directory cannot have spaces. If you need to have spaces in your working directory create a soft link and pass it as the working directory.
+
+```
+ln -s Target Link-Name
+```
+
+### Execute permissiions
+If you have any issues make sure you have no spaces in the arguments you pass and that the executable you are trying to run has execute permission enabled with `chmod +x you-app`
