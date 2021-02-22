@@ -1,9 +1,7 @@
 # Systemd Service Maker
-Sometimes it necessary to run an application from start. If you come from the world of raspberry pi you will run into several different methods on how to run scripts on startup. This methods are going to include but not limited to using `crontab`, `init.d`, `rc.local`.
+Sometimes it necessary to run an application from boot. If you come from the world of raspberry pi you will run into several different ways you can use to run scripts on boot. The methods Included but not limited to are using `crontab`, `init.d`, `rc.local`, `systemd`. `systemd` is supposed to replace `init.d` and is more powerful then `crontab`.
 
-While all these methods might have their place almost always I just want my application to run after the system is booted and to have some sort of logs. This is where `systemd` comes in.
-
-With `systemd` you can turn your application into a service and even look at logs.
+With `systemd` you can turn your application into a service and even look at logs. 
 
 ## Install
 
