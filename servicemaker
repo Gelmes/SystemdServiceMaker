@@ -13,42 +13,86 @@ DESCRIPTION="Default Description"
 DIRECTORY="/home/"
 RESTART=10
 SERVICES="/usr/lib/systemd/system"
+USER_LEVEL=$USER
 
-for i in "$@"
-do
-case $i in
-    -n=*|--name=*)
-    NAME="${i#*=}"
-    shift # past argument=value
-    ;;
-    -a=*|--application=*)
-    APP="${i#*=}"
-    shift # past argument=value
-    ;;
-    -d=*|--description=*)
-    DESCRIPTION="${i#*=}"
-    shift # past argument=value
-    ;;
-    -w=*|--directory=*)
-    DIRECTORY="${i#*=}"
-    shift # past argument=value
-    ;;
-    -r=*|--restart=*)
-    RESTART="${i#*=}"
-    shift # past argument=value
-    ;;
-    --default)
-    DEFAULT=YES
-    shift # past argument with no value
-    ;;
-    *)
-          # unknown option
-    ;;
-esac
-done
+PARAMS=""
+while (( "$#" )); do
+    case "$1" in
+        # -a|--my-boolean-flag)
+        #   MY_FLAG=0
+        #   shift
+        #   ;;
+        -n|--name)
+            if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+            NAME=$2
+            shift 2
+            else
+            echo "Error: Argument for $1 is missing" >&2
+            exit 1
+            fi
+            ;;
+        -a|--application)
+            if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+            APP=$2
+            shift 2
+            else
+            echo "Error: Argument for $1 is missing" >&2
+            exit 1
+            fi
+            ;;
+        -d|--description)
+            if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+            DESCRIPTION=$2
+            shift 2
+            else
+            echo "Error: Argument for $1 is missing" >&2
+            exit 1
+            fi
+            ;;
+        -w|--directory)
+            if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+            DIRECTORY=$2
+            shift 2
+            else
+            echo "Error: Argument for $1 is missing" >&2
+            exit 1
+            fi
+            ;;
+        -r|--restart)
+            if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+            NAME=$2
+            shift 2
+            else
+            echo "Error: Argument for $1 is missing" >&2
+            exit 1
+            fi
+            ;;
+        -u|--user)
+            if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+            USER_LEVEL=$2
+            shift 2
+            else
+            echo "Error: Argument for $1 is missing" >&2
+            exit 1
+            fi
+            ;;
+        -*|--*=) # unsupported flags
+            echo "Error: Unsupported flag $1" >&2
+            exit 1
+            ;;
+        *) # preserve positional arguments
+            PARAMS="$PARAMS $1"
+            shift
+            ;;
+    esac
+done 
+
+# set positional arguments in their proper place
+eval set -- "$PARAMS"
 
 echo ""
 echo "Name              = ${NAME}"
+echo "User              = ${USER_LEVEL}"
 echo "Application       = ${APP}"
 echo "Description       = ${DESCRIPTION}"
 echo "Working Directory = ${DIRECTORY}"
@@ -59,10 +103,24 @@ SERVICE=$SERVICES/$NAME.service
 
 FILE=$SERVICE
 if test -f "$FILE"; then
-    echo "$NAME.service exists disabling and removing"
-    systemctl disable $NAME.service
-    rm -f $SERVICE
+    read -p "$NAME.service already exists, overwrite [y/N]? " -r
+    echo    # (optional) move to a new line
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        echo "Overwriting $NAME.service"
+        systemctl stop $NAME.service
+        systemctl disable $NAME.service
+        rm -f $SERVICE
+    else
+        echo "Nothing to do exiting"
+        exit 1
+    fi
 fi
+
+# Just in case there is spaces in the working directory escape them 
+# Due to a bug in systemd direcotries cannot simply be quoted around
+DIR_ESCAPED=$(systemd-escape --path "$DIRECTORY")
+# DIR_ESCAPED=$(echo $DIRECTORY | sed -En "s/\s/x20/gp")
 
 cat > $SERVICE << EOM
 [Unit]
@@ -72,10 +130,10 @@ Type=simple
 PIDFile=/run/$NAME.pid
 # Step 1 and Step 2 details are here..
 # ------------------------------------
-ExecStart=$APP
-User=gelmes
-Group=gelmes
-WorkingDirectory=$DIRECTORY
+ExecStart="$APP"
+User=$USER_LEVEL
+Group=$USER_LEVEL
+WorkingDirectory=-$DIR_ESCAPED
 Restart=always
 RestartSec=10
 #KillMode=mixed

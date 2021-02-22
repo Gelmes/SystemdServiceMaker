@@ -9,12 +9,13 @@ With `systemd` you can turn your application into a service and even look at log
 sudo sh install.sh
 
 ## How to use
-
-sudo servicemaker [-n=name] [-a="app-executable-location"] [-d="description"] [-w=working-directory] [-r=reset-time] 
+```
+sudo servicemaker [-n name] [-a "app-executable-location"] [-d "description"] [-w working-directory] [-r reset-time] [-u user]
+```
 
 ## Issues
 
-If you have any issues make sure you have no spaces in the arguments you pass and that the executable you are trying to run has exeute permission enabled with `chmod +x you-app`
+If you have any issues make sure you have no spaces in the arguments you pass and that the executable you are trying to run has execute permission enabled with `chmod +x you-app`
 
 ## Good to know commands
 
