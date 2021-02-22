@@ -2,7 +2,16 @@
 
 if [[ $# -eq 0 ]] ; then
 cat << EOM
-Usage: 
+Usage: servicemaker [OPTIONS]...
+Automatically create and start a systemd unit file from a template.
+
+Options:   
+    -m, --name          Service name
+    -a, --application   Application location
+    -d, --description   Description of application
+    -w, --directory     Working Directory of application (no spaces!)
+    -r, --restart       Restart interval in seconds (default: 10)
+    -u, --user          User execution level (default: root!)
 EOM
 exit 0
 fi
@@ -60,7 +69,7 @@ while (( "$#" )); do
             ;;
         -r|--restart)
             if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
-            NAME=$2
+            RESTART=$2
             shift 2
             else
             echo "Error: Argument for $1 is missing" >&2
@@ -119,8 +128,7 @@ fi
 
 # Just in case there is spaces in the working directory escape them 
 # Due to a bug in systemd direcotries cannot simply be quoted around
-DIR_ESCAPED=$(systemd-escape --path "$DIRECTORY")
-# DIR_ESCAPED=$(echo $DIRECTORY | sed -En "s/\s/x20/gp")
+DIR_ESCAPED=$(systemd-escape --path "$DIRECTORY") # NOTE: not in use since it does not seem to work in every case
 
 cat > $SERVICE << EOM
 [Unit]
@@ -133,7 +141,7 @@ PIDFile=/run/$NAME.pid
 ExecStart="$APP"
 User=$USER_LEVEL
 Group=$USER_LEVEL
-WorkingDirectory=-$DIR_ESCAPED
+WorkingDirectory=$DIRECTORY
 Restart=always
 RestartSec=10
 #KillMode=mixed
